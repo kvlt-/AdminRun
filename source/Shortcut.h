@@ -11,6 +11,7 @@ public:
     ~CShortcut();
 
     DECLARE_GETTER_VAL(int, GetID, m_id);
+    DECLARE_GETTER_VAL(LPCTSTR, GetName, m_csName);
     DECLARE_GETTER_VAL(LPCTSTR, GetFilePath, m_csFilePath);
     DECLARE_GETTER_VAL(size_t, GetFilePathLength, m_csFilePath.GetLength());
     DECLARE_GETTER_VAL(LPCTSTR, GetTarget, m_csTarget);
@@ -18,6 +19,7 @@ public:
     DECLARE_GETTER_VAL(LPCTSTR, GetWorkingDir, m_csWorkingDir);
     
     DECLARE_SETTER_VAL(int, SetID, m_id);
+    DECLARE_SETTER_VAL(LPCTSTR, SetName, m_csName);
     DECLARE_SETTER_VAL(LPCTSTR, SetFilePath, m_csFilePath);
     DECLARE_SETTER_VAL(LPCTSTR, SetTarget, m_csTarget);
     DECLARE_SETTER_VAL(LPCTSTR, SetArguments, m_csArguments);
@@ -32,11 +34,13 @@ public:
 
 protected:
     INT m_id;
+    CString m_csName;
     CString m_csFilePath;
     CString m_csTarget;
     CString m_csArguments;
     CString m_csWorkingDir;
     HICON m_hIcon;
+    BOOL m_bDestroyIcon;
 
 protected:
     BOOL ChangeTarget(LPCTSTR szTarget, LPCTSTR szArguments);

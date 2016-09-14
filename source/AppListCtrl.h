@@ -8,13 +8,14 @@ public:
 
 protected:
     DECLARE_MESSAGE_MAP()
-public:
-    void MeasureItem(LPMEASUREITEMSTRUCT pMS);
-    int CompareItem(LPCOMPAREITEMSTRUCT pCS);
-    void DrawItem(LPDRAWITEMSTRUCT pDS);
 
-    void DrawEntire(LPDRAWITEMSTRUCT lpDStruct);
-    void DrawSelected(LPDRAWITEMSTRUCT lpDStruct);
-    void DrawBitmaps(HDC hDC, RECT rect, int checked);
+public:
+    void MeasureItem(LPMEASUREITEMSTRUCT pMS) override;
+    int CompareItem(LPCOMPAREITEMSTRUCT pCS) override;
+    void DrawItem(LPDRAWITEMSTRUCT pDS) override;
+
+    //void DrawEntire(LPDRAWITEMSTRUCT lpDStruct);
+    //void DrawSelected(LPDRAWITEMSTRUCT lpDStruct);
+    //void DrawBitmaps(HDC hDC, RECT rect, int checked);
 };
 

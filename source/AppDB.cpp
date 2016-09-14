@@ -5,17 +5,18 @@
 #define SQL_RESET \
 "CREATE TABLE apps (\
   id INTEGER PRIMARY KEY,\
-  path VARCHAR(260) collate nocase,\
-  target VARCHAR(260),\
-  args VARCHAR(260),\
-  dir VARCHAR(260));\
+  name VARCHAR(260) NOT NULL collate nocase,\
+  path VARCHAR(260) NOT NULL collate nocase,\
+  target VARCHAR(260) NOT NULL,\
+  args VARCHAR(260) NOT NULL,\
+  dir VARCHAR(260)) NOT NULL;\
 CREATE UNIQUE INDEX idx_path ON apps(path);"
 #define SQL_COUNT_ALL   "SELECT count(*) FROM apps;"
-#define SQL_SELECT_ALL  "SELECT id,path,target,args,dir FROM apps ORDER BY path ASC;"
-#define SQL_SELECT_BY_ID    "SELECT id,path,target,args,dir FROM apps WHERE id=?;"
-#define SQL_SELECT_BY_PATH  "SELECT id,path,target,args,dir FROM apps WHERE path=?;"
-#define SQL_UPDATE      "UPDATE apps SET path=?,target=?,args=?,dir=? WHERE id=?;"
-#define SQL_INSERT      "INSERT INTO apps(path,target,args,dir) VALUES (?,?,?,?);"
+#define SQL_SELECT_ALL  "SELECT id,name,path,target,args,dir FROM apps ORDER BY name ASC;"
+#define SQL_SELECT_BY_ID    "SELECT id,name,path,target,args,dir FROM apps WHERE id=?;"
+#define SQL_SELECT_BY_PATH  "SELECT id,name,path,target,args,dir FROM apps WHERE path=?;"
+#define SQL_UPDATE      "UPDATE apps SET name=?,path=?,target=?,args=?,dir=? WHERE id=?;"
+#define SQL_INSERT      "INSERT INTO apps(name,path,target,args,dir) VALUES (?,?,?,?,?);"
 #define SQL_DELETE      "DELETE FROM apps WHERE id=?;"
 
 
@@ -180,10 +181,11 @@ BOOL CAppDB::GetAllItems(CShortcutArray & items)
 
             items[i] = new CShortcut();
             items[i]->SetID((int)sqlite3_column_int(stmt, 0));
-            items[i]->SetFilePath(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 1), CP_UTF8));
-            items[i]->SetTarget(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 2), CP_UTF8));
-            items[i]->SetArguments(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 3), CP_UTF8));
-            items[i]->SetWorkingDir(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 4), CP_UTF8));
+            items[i]->SetName(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 1), CP_UTF8));
+            items[i]->SetFilePath(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 2), CP_UTF8));
+            items[i]->SetTarget(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 3), CP_UTF8));
+            items[i]->SetArguments(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 4), CP_UTF8));
+            items[i]->SetWorkingDir(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 5), CP_UTF8));
         }
     } while (0);
 
@@ -230,10 +232,11 @@ BOOL CAppDB::GetItem(CShortcut & item)
         sret = sqlite3_step(stmt);
         if (sret == SQLITE_ROW) {
             item.SetID((int)sqlite3_column_int(stmt, 0));
-            item.SetFilePath(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 1), CP_UTF8));
-            item.SetTarget(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 2), CP_UTF8));
-            item.SetArguments(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 3), CP_UTF8));
-            item.SetWorkingDir(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 4), CP_UTF8));
+            item.SetName(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 1), CP_UTF8));
+            item.SetFilePath(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 2), CP_UTF8));
+            item.SetTarget(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 3), CP_UTF8));
+            item.SetArguments(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 4), CP_UTF8));
+            item.SetWorkingDir(CA2TEX<MAX_PATH>((LPSTR)sqlite3_column_text(stmt, 5), CP_UTF8));
         }
     } while (0);
 
@@ -254,23 +257,27 @@ BOOL CAppDB::UpdateItem(CShortcut & item)
             stmt = m_stmt[STMT_UPDATE];
         }
 
+        CT2AEX<MAX_PATH> szNameA(item.GetName(), CP_UTF8);
+        sret = sqlite3_bind_text(stmt, 1, szNameA, strlen(szNameA), SQLITE_STATIC);
+        if (sret != SQLITE_OK) break;
+
         CT2AEX<MAX_PATH> szPathA(item.GetFilePath(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 1, szPathA, strlen(szPathA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 2, szPathA, strlen(szPathA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         CT2AEX<MAX_PATH> szTargetA(item.GetTarget(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 2, szTargetA, strlen(szTargetA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 3, szTargetA, strlen(szTargetA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         CT2AEX<MAX_PATH> szArgsA(item.GetArguments(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 3, szArgsA, strlen(szArgsA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 4, szArgsA, strlen(szArgsA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         CT2AEX<MAX_PATH> szDirA(item.GetWorkingDir(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 4, szDirA, strlen(szDirA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 5, szDirA, strlen(szDirA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
-        sret = sqlite3_bind_int(stmt, 5, item.GetID());
+        sret = sqlite3_bind_int(stmt, 6, item.GetID());
         if (sret != SQLITE_OK) break;
 
         sret = sqlite3_step(stmt);
@@ -293,20 +300,24 @@ BOOL CAppDB::InsertItem(CShortcut & item)
            stmt = m_stmt[STMT_INSERT];
         }
 
+        CT2AEX<MAX_PATH> szNameA(item.GetName(), CP_UTF8);
+        sret = sqlite3_bind_text(stmt, 1, szNameA, strlen(szNameA), SQLITE_STATIC);
+        if (sret != SQLITE_OK) break;
+
         CT2AEX<MAX_PATH> szPathA(item.GetFilePath(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 1, szPathA, strlen(szPathA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 2, szPathA, strlen(szPathA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         CT2AEX<MAX_PATH> szTargetA(item.GetTarget(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 2, szTargetA, strlen(szTargetA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 3, szTargetA, strlen(szTargetA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         CT2AEX<MAX_PATH> szArgsA(item.GetArguments(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 3, szArgsA, strlen(szArgsA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 4, szArgsA, strlen(szArgsA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         CT2AEX<MAX_PATH> szDirA(item.GetWorkingDir(), CP_UTF8);
-        sret = sqlite3_bind_text(stmt, 4, szDirA, strlen(szDirA), SQLITE_STATIC);
+        sret = sqlite3_bind_text(stmt, 5, szDirA, strlen(szDirA), SQLITE_STATIC);
         if (sret != SQLITE_OK) break;
 
         sret = sqlite3_step(stmt);

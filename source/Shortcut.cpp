@@ -11,11 +11,13 @@ CShortcut::CShortcut(INT id, LPCTSTR szFilePath)
     m_id = id;
     m_csFilePath = szFilePath;
     m_hIcon = NULL;
+    m_bDestroyIcon = FALSE;
 }
 
 CShortcut::~CShortcut()
 {
-    if (m_hIcon) DestroyIcon(m_hIcon);
+    if (m_hIcon && m_bDestroyIcon)
+        DestroyIcon(m_hIcon);
 }
 
 HICON CShortcut::GetIcon()
@@ -34,7 +36,7 @@ HICON CShortcut::GetIcon()
         hr = pLink->QueryInterface(IID_IPersistFile, (void **)&pFile);
         if (FAILED(hr)) break;
 
-        hr = pFile->Load(_bstr_t(m_csFilePath), STGM_READ);
+        hr = pFile->Load(_bstr_t(m_csFilePath), STGM_READ | STGM_SHARE_DENY_NONE);
         if (FAILED(hr)) break;
 
         hr = pLink->Resolve(NULL, SLR_NO_UI | SLR_NOUPDATE | SLR_NOSEARCH);
@@ -49,6 +51,12 @@ HICON CShortcut::GetIcon()
         CString csIconPath = g_normalizer.Do(szIconPath);
 
         m_hIcon = ExtractIcon(AfxGetInstanceHandle(), csIconPath, iIconIndex);
+        if (m_hIcon) {
+            m_bDestroyIcon = TRUE;
+        }
+        else {
+            m_hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        }
     } while (0);
 
     return m_hIcon;
@@ -87,6 +95,8 @@ BOOL CShortcut::Resolve()
         pLink->GetWorkingDirectory(szValue, _countof(szValue));
         m_csWorkingDir = g_normalizer.Do(szValue);
 
+        _tsplitpath_s(m_csFilePath, NULL, 0, NULL, 0, m_csName.GetBuffer(_MAX_FNAME), _MAX_FNAME, NULL, 0);
+        m_csName.ReleaseBuffer();
     } while (0);
 
     return SUCCEEDED(hr);
