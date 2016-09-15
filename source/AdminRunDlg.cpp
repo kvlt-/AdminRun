@@ -122,7 +122,8 @@ void CAdminRunDlg::OnAppApply()
         m_ctlEditArgs.GetWindowText(buf, _countof(buf));
         pItem->SetArguments(buf);
 
-        m_pDB->UpdateItem(*pItem);
+        if (m_pDB->UpdateItem(*pItem))
+            m_ctlBtnApply.EnableWindow(FALSE);
     }
 }
 
