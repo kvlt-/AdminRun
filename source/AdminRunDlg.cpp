@@ -38,6 +38,9 @@ BEGIN_MESSAGE_MAP(CAdminRunDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_APPLY, OnAppApply)
     ON_BN_CLICKED(IDC_BTN_DELETE, OnAppDelete)
     ON_BN_CLICKED(IDC_BTN_ADD, OnAppAdd)
+    ON_EN_CHANGE(IDC_BROWSE_TARGETAPP, OnEditChange)
+    ON_EN_CHANGE(IDC_BROWSE_TARGETDIR, OnEditChange)
+    ON_EN_CHANGE(IDC_EDIT_ARGS, OnEditChange)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 END_MESSAGE_MAP()
@@ -67,7 +70,7 @@ BOOL CAdminRunDlg::OnInitDialog()
     }
 
     // load data and fill app list
-    ReloadData(0);
+    ReloadData();
 
 	return TRUE;
 }
@@ -83,7 +86,7 @@ void CAdminRunDlg::OnAppSelection()
         m_ctlEditArgs.SetWindowText(_T(""));
     }
     else {
-        CShortcut * pItem = (CShortcut *)m_ctlListApp.GetItemData(sel);
+        CShortcut * pItem = reinterpret_cast<CShortcut *>(m_ctlListApp.GetItemData(sel));
 
         m_ctlLabelName.SetWindowText(pItem->GetName());
         m_ctlBrowseApp.SetWindowText(pItem->GetTarget());
@@ -97,7 +100,7 @@ void CAdminRunDlg::OnAppSelection()
     this->InvalidateRect(rc);
 
     BOOL bEnable = sel >= 0;
-    m_ctlBtnApply.EnableWindow(bEnable);
+    m_ctlBtnApply.EnableWindow(FALSE);
     m_ctlBtnDelete.EnableWindow(bEnable);
     m_ctlBrowseApp.EnableWindow(bEnable);
     m_ctlBrowseDir.EnableWindow(bEnable);
@@ -110,7 +113,7 @@ void CAdminRunDlg::OnAppApply()
 
     if (sel >= 0) {
         TCHAR buf[MAX_PATH];
-        CShortcut * pItem = (CShortcut *)m_ctlListApp.GetItemData(sel);
+        CShortcut * pItem = reinterpret_cast<CShortcut *>(m_ctlListApp.GetItemData(sel));
 
         m_ctlBrowseApp.GetWindowText(buf, _countof(buf));
         pItem->SetTarget(buf);
@@ -128,7 +131,7 @@ void CAdminRunDlg::OnAppDelete()
     int sel = m_ctlListApp.GetCurSel();
 
     if (sel >= 0) {
-        CShortcut * pItem = (CShortcut *)m_ctlListApp.GetItemData(sel);
+        CShortcut * pItem = reinterpret_cast<CShortcut *>(m_ctlListApp.GetItemData(sel));
 
         if (m_pDB->DeleteItem(*pItem)) {
             pItem->ChangeTargetToOriginal();
@@ -162,8 +165,13 @@ void CAdminRunDlg::OnAppAdd()
         }
 
         CString name = item.GetName();
-        ReloadData(-1, name);
+        ReloadData(0, name);
     } while (0);
+}
+
+void CAdminRunDlg::OnEditChange()
+{
+    m_ctlBtnApply.EnableWindow(TRUE);
 }
 
 void CAdminRunDlg::OnPaint()
@@ -207,7 +215,7 @@ void CAdminRunDlg::ReloadData(int iSelection, LPCTSTR szName)
         int index = -1;
         for (int i = 0; i < (int)m_shortcuts.GetCount(); i++) {
             m_ctlListApp.InsertString(i, _T(""));
-            m_ctlListApp.SetItemData(i, (DWORD_PTR)m_shortcuts[i]);
+            m_ctlListApp.SetItemData(i, reinterpret_cast<DWORD_PTR>(m_shortcuts[i]));
             if (szName && _tcscmp(m_shortcuts[i]->GetName(), szName) == 0)
                 iSelection = i;
         }
